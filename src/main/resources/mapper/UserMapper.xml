@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sqn.seckill.mapper.UserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.sqn.seckill.entity.User">
+        <id column="id" property="id" />
+        <result column="nickname" property="nickname" />
+        <result column="password" property="password" />
+        <result column="salt" property="salt" />
+        <result column="head" property="head" />
+        <result column="register_date" property="registerDate" />
+        <result column="last_login_date" property="lastLoginDate" />
+        <result column="login_count" property="loginCount" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, nickname, password, salt, head, register_date, last_login_date, login_count
+    </sql>
+
+</mapper>
