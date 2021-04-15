@@ -104,7 +104,7 @@ public class AutoGeneratorCode {
         //是否覆盖原有文件
         globalConfig.setFileOverride(true);
         //是否支持swagger2
-        globalConfig.setSwagger2(true);
+        globalConfig.setSwagger2(false);
 
         //实体命名方式
         //globalConfig.setEntityName("%sEntity");
