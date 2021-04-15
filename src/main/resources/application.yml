@@ -22,6 +22,30 @@ spring:
       # 连接超时时间，默认30000（30秒）
       connection-timeout: 30000
       connection-test-query: SELECT 1
+
+  # redis配置
+  redis:
+    # 服务器地址
+    #host: 192.168.1.121
+    host: 127.0.0.1
+    # 端口
+    port: 6379
+    # 数据库
+    database: 0
+    # 超时时间
+    timeout: 10000ms
+    lettuce:
+      pool:
+        # 最大连接数，默认8
+        max-active: 8
+        # 最大连接阻塞等待时间，默认-1
+        max-wait: 10000ms
+        # 最大空闲连接，默认8
+        max-idle: 200
+        # 最小空闲连接，默认0
+        min-idle: 5
+
+
 #Mybatis-plus配置
 mybatis-plus:
   # 配置mapper.xml映射文件
@@ -29,7 +53,7 @@ mybatis-plus:
   # 配置数据返回类型别名（默认别名是类名）
   type-aliases-package: com.sqn.seckill.pojo
 
-#Mybatis SQL打印（方法接口所在的包，不是Mapper.xml所在的包）
+# Mybatis SQL打印（方法接口所在的包，不是Mapper.xml所在的包）
 logging:
   level:
     com.sqn.seckill.mapper: debug
