@@ -42,12 +42,12 @@ public class AutoGeneratorCode {
     /**
      * 表名："t_category"，“t_test”...
      */
-    private static final String[] TABELS = {"t_user"};
+    private static final String[] TABELS = {"t_goods","t_seckill_goods","t_order","t_seckill_order"};
 
     /**
      * 模块名
      */
-    private static final String MODULENAME = "user";
+    private static final String MODULENAME = "generator";
 
     /**
      * 父包模块名
@@ -102,7 +102,7 @@ public class AutoGeneratorCode {
         //是否使用资源管理器打开输出目录
         globalConfig.setOpen(false);
         //是否覆盖原有文件
-        globalConfig.setFileOverride(true);
+        globalConfig.setFileOverride(false);
         //是否支持swagger2
         globalConfig.setSwagger2(false);
 
@@ -159,7 +159,7 @@ public class AutoGeneratorCode {
         //指定表名是否使用前缀
         strategyConfig.setTablePrefix("t_");
         //设置映射的表名,必填*
-        strategyConfig.setInclude();
+        strategyConfig.setInclude(TABELS);
         //数据库表映射到实体的命名策略
         strategyConfig.setNaming(NamingStrategy.underline_to_camel);
         strategyConfig.setColumnNaming(NamingStrategy.underline_to_camel);

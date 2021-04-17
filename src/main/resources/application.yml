@@ -44,9 +44,6 @@ spring:
         max-idle: 200
         # 最小空闲连接，默认0
         min-idle: 5
-  # 定义匹配静态资源路径
-  mvc:
-    static-path-pattern: /**
 
 # Mybatis-plus配置
 mybatis-plus:

@@ -172,11 +172,9 @@ public final class CookieUtil {
             }
             cookie.setPath("/");
             response.addCookie(cookie);
-        } catch (
-                Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     /**
@@ -189,14 +187,14 @@ public final class CookieUtil {
      * @param cookieMaxage Cookie生效的最大秒数
      * @param encodeString
      */
-    private static final void doSetCookie(HttpServletRequest request, HttpServletResponse response,
-                                          String cookieName, String cookieValue, int cookieMaxage, String
-                                                  encodeString) {
+    public static final void doSetCookie(HttpServletRequest request, HttpServletResponse response,
+                                         String cookieName, String cookieValue, int cookieMaxage, String
+                                                 encodeString) {
         try {
             if (cookieValue == null) {
                 cookieValue = "";
             } else {
-                cookieValue = URLEncoder.encode(cookieValue, "utf-8");
+                cookieValue = URLEncoder.encode(cookieValue, encodeString);
             }
             Cookie cookie = new Cookie(cookieName, cookieValue);
             if (cookieMaxage > 8) {
@@ -222,7 +220,7 @@ public final class CookieUtil {
      * @param request
      * @return
      */
-    private static final String getDomainName(HttpServletRequest request) {
+    public static final String getDomainName(HttpServletRequest request) {
         String domainName = null;
         // 通过request对象获取访问的url地址
         String serverName = request.getRequestURL().toString();

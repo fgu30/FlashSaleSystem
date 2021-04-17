@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>订单详情</title>
+    <!--jquery-->
+    <script type="text/javascript" th:src="@{/js/jquery.min.js}"></script>
+    <!--bootstrap-->
+    <link rel="stylesheet" type="text/css" th:href=
+            "@{/bootstrap/css/bootstrap.min.css}"/>
+    <script type="text/javascript" th:src="@{/bootstrap/js/bootstrap.min.js}"></script>
+    <!--layer-->
+    <script type="text/Javascript" th:src="@{/layer/layer.js}"></script>
+    <!--common.js-->
+    <script type="text/javascript" th:src="@{/js/common.js}"></script>
+</head>
+<body>
+<div class="panel panel-default">
+    <div class="panel-heading">秒杀订单详情</div>
+    <table class="table" id="order">
+        <tr>
+            <td>商品名称</td>
+            <td colspan="3" th:text="${goods.goodsName}"></td>
+        </tr>
+        <tr>
+            <td>商品图片</td>
+            <td colspan="2"><img th:src="@{${goods.goodsImg}}" width="200" height="200"/></td>
+        </tr>
+        <tr>
+            <td>订单价格</td>
+            <td colspan="2" th:text="${order.goodsPrice}"></td>
+        </tr>
+        <tr>
+            <td>下单时间</td>
+            <td colspan="2" th:text="${#dates.format(order.createDate,'yyyy-MM-dd HH:mm:ss')}"></td>
+        </tr>
+        <tr>
+            <td>订单状态</td>
+            <td>
+                <span th:if="${order.status eq 0}">未支付</span>
+                <span th:if="${order.status eq 1}">待发货</span>
+                <span th:if="${order.status eq 2}">已发货</span>
+                <span th:if="${order.status eq 3}">已收货</span>
+                <span th:if="${order.status eq 4}">已退款</span>
+                <span th:if="${order.status eq 5}">已完成</span>
+            </td>
+
+        </tr>
+        <tr>
+            <td>收货人</td>
+            <td colspan="2" th:text="${user.nickname}+' '+${user.id}"></td>
+        </tr>
+        <tr>
+            <td>收货地址</td>
+            <td colspan="2" th:text="${order.deliveryAddrId}"></td>
+        </tr>
+        <tr>
+            <td>
+                <button class="btn btn-primary btn-block" type="submit" id="payButton">立即支付</button>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>
