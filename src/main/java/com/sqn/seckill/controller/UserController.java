@@ -1,8 +1,11 @@
 package com.sqn.seckill.controller;
 
 
+import com.sqn.seckill.entity.User;
+import com.sqn.seckill.vo.RespBean;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -16,6 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/user")
 public class UserController {
+
+    @RequestMapping("/info")
+    @ResponseBody
+    public RespBean info(User user){
+        return RespBean.success(user);
+    }
 
 }
 
