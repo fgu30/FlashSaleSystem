@@ -37,6 +37,9 @@ public class SecKillController {
 
     /**
      * 秒杀
+     * 1000*1*10
+     * windows优化前QPS:467.5/sec
+     * linux优化前QPS:94.4/sec
      *
      * @param model
      * @param user
