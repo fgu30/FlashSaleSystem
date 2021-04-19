@@ -25,7 +25,7 @@ public interface UserService extends IService<User> {
      * @param response
      * @return
      */
-    public RespBean doLogin(LoginVO loginVO,HttpServletRequest request, HttpServletResponse response);
+    public RespBean doLogin(LoginVO loginVO, HttpServletRequest request, HttpServletResponse response);
 
     /**
      * 根据cookie获取用户
@@ -33,6 +33,16 @@ public interface UserService extends IService<User> {
      * @param userTicket
      * @return
      */
-    User getUserByCookie(String userTicket,HttpServletRequest request,HttpServletResponse response);
+    User getUserByCookie(String userTicket, HttpServletRequest request, HttpServletResponse response);
+
+    /**
+     * 更新密码
+     *
+     * @param userTicket
+     * @param request
+     * @param response
+     * @return
+     */
+    public RespBean updatePassword(String userTicket, String password, HttpServletRequest request, HttpServletResponse response);
 
 }
