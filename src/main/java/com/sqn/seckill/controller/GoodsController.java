@@ -3,7 +3,9 @@ package com.sqn.seckill.controller;
 import com.sqn.seckill.entity.User;
 import com.sqn.seckill.service.GoodsService;
 import com.sqn.seckill.service.UserService;
+import com.sqn.seckill.vo.GoodsDetailVO;
 import com.sqn.seckill.vo.GoodsVO;
+import com.sqn.seckill.vo.RespBean;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -46,8 +48,7 @@ public class GoodsController {
     private ThymeleafViewResolver thymeleafViewResolver;
 
     /**
-     * 跳转到商品列表页面
-     * user存入session中  后改为Spring Session----redis
+     * 跳转到商品列表页面 user存入session中  后改为Spring Session----redis
      *
      * @param session
      * @param model
@@ -68,8 +69,7 @@ public class GoodsController {
 //    }
 
     /**
-     * 跳转到商品列表页面
-     * cookie存放userTicket，user存入redis中
+     * 跳转到商品列表页面 cookie存放userTicket，user存入redis中
      *
      * @param request
      * @param response
@@ -91,8 +91,7 @@ public class GoodsController {
 //    }
 
     /**
-     * 跳转到商品列表页面
-     * user参数解析
+     * 跳转到商品列表页面 user参数解析
      *
      * @param model
      * @param user
@@ -158,7 +157,7 @@ public class GoodsController {
 //        //秒杀倒计时
 //        int remainSeconds = 0;
 //        //秒杀结束倒计时
-//        int endSeconds = endSeconds = (int) ((endDate.getTime() - nowDate.getTime()) / 1000);
+//        int endSeconds = (int) ((endDate.getTime() - nowDate.getTime()) / 1000);
 //        //秒杀还未开始
 //        if (nowDate.before(startDate)) {
 //            remainSeconds = (int) ((startDate.getTime() - nowDate.getTime()) / 1000);
@@ -235,5 +234,51 @@ public class GoodsController {
 
         }
         return html;
+    }
+
+    /**
+     * 跳转到商品详情页面 页面静态化 前后端分离 ajax
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping("/detail/{goodsId}")
+    @ResponseBody
+    public RespBean detail(User user, @PathVariable Long goodsId) {
+        GoodsVO goodsVO = goodsService.findGoodsVOByGoodsId(goodsId);
+
+        Date startDate = goodsVO.getStartDate();
+        Date endDate = goodsVO.getEndDate();
+        Date nowDate = new Date();
+
+        //秒杀状态
+        int secKillStatus = 0;
+        //秒杀倒计时
+        Long remainSeconds = 0L;
+        //秒杀结束倒计时
+        Long endSeconds = (endDate.getTime() - nowDate.getTime()) / 1000;
+        //秒杀还未开始
+        if (nowDate.before(startDate)) {
+            remainSeconds = (startDate.getTime() - nowDate.getTime()) / 1000;
+        } else if (nowDate.after(endDate)) {
+            //秒杀已结束
+            secKillStatus = 2;
+            remainSeconds = -1L;
+            endSeconds = 0L;
+        } else {
+            //秒杀进行中
+            secKillStatus = 1;
+            remainSeconds = 0L;
+        }
+
+        GoodsDetailVO goodsDetailVO = new GoodsDetailVO();
+        goodsDetailVO.setUser(user);
+        goodsDetailVO.setGoodsVO(goodsVO);
+        goodsDetailVO.setSecKillStatus(secKillStatus);
+        goodsDetailVO.setRemainSeconds(remainSeconds);
+        goodsDetailVO.setEndSeconds(endSeconds);
+
+        return RespBean.success(goodsDetailVO);
     }
 }

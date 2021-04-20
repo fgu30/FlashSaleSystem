@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>订单详情</title>
+    <!--jquery-->
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <!--bootstrap-->
+    <link rel="stylesheet" type="text/css" href=
+            "/bootstrap/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+    <!--layer-->
+    <script type="text/Javascript" src="/layer/layer.js"></script>
+    <!--common.js-->
+    <script type="text/javascript" src="/js/common.js"></script>
+</head>
+<body>
+<div class="panel panel-default">
+    <div class="panel-heading">秒杀订单详情</div>
+    <table class="table" id="order">
+        <tr>
+            <td>商品名称</td>
+            <td colspan="3" id="goodsName"></td>
+        </tr>
+        <tr>
+            <td>商品图片</td>
+            <td colspan="2"><img id="goodsImg" width="200" height="200"/></td>
+        </tr>
+        <tr>
+            <td>订单价格</td>
+            <td colspan="2" id="goodsPrice"></td>
+        </tr>
+        <tr>
+            <td>下单时间</td>
+            <td colspan="2" id="createDate"></td>
+        </tr>
+        <tr>
+            <td>订单状态</td>
+            <td id="status">
+            </td>
+
+        </tr>
+        <tr>
+            <td>收货人</td>
+            <td colspan="2" id="nickname">xxx   130xxxxxxxx</td>
+        </tr>
+        <tr>
+            <td>收货地址</td>
+            <td colspan="2" id="deliveryAddrId">上海市浦东区世纪大道xxx</td>
+        </tr>
+        <tr>
+            <td>
+                <button class="btn btn-primary btn-block" type="submit" id="payButton">立即支付</button>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+<script>
+    $(function () {
+        getOderDetail();
+    })
+
+    //ajax异步请求页面数据
+    function getOderDetail(){
+        var orderId = getQueryVariable("orderId");
+
+        $.ajax({
+            url: "/order/detail",
+            type: "GET",
+            data: {
+                orderId:orderId
+            },
+            success: function (data) {
+                if (data.code == 200) {
+                    render(data.obj);
+                } else {
+                    layer.msg(data.message);
+                }
+            },
+            error: function () {
+                layer.msg("客户端请求出错");
+            }
+        })
+    }
+
+    //ajax返回值渲染页面
+    function render(detail) {
+        var order = detail.order;
+        var goods = detail.goodsVO;
+
+        $("#goodsName").text(goods.goodsName);
+        $("#goodsImg").attr("src", goods.goodsImg);
+        $("#goodsPrice").text(order.goodsPrice);
+        $("#createDate").text(new Date(order.createDate).format("yyyy-MM-dd HH:mm:ss"));
+
+        var status = order.status;
+        var statusText = "";
+        switch (status) {
+            case 0:
+                statusText = "未支付";
+                break;
+            case 1:
+                statusText = "待发货";
+                break;
+            case 2:
+                statusText = "已发货";
+                break;
+            case 3:
+                statusText = "已收货";
+                break;
+            case 4:
+                statusText = "已退款";
+                break;
+            case 5:
+                statusText = "已完成";
+                break;
+        }
+        $("#status").text(statusText);
+    }
+</script>
+</html>

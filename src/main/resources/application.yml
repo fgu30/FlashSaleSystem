@@ -1,7 +1,27 @@
 server:
   port: 9999
 spring:
+  # 静态资源处理
+  resources:
+    # 启动静态资源处理，默认开启
+    add-mappings: true
+    cache:
+      cachecontrol:
+        # 缓存响应时间，秒
+        max-age: 3600
+    chain:
+      # 资源链启动缓存，默认启动
+      cache: true
+      # 启用资源链，默认禁用
+      enabled: true
+      # 启用压缩资源（gzip,brotli）解析，默认禁用
+      compressed: true
+      # 启用h5应用缓存，默认禁用
+      html-application-cache: true
+    static-locations: classpath:/static/
+  # thymeleaf配置
   thymeleaf:
+    # 关闭缓存
     cache: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

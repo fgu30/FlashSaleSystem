@@ -8,11 +8,15 @@ import com.sqn.seckill.service.GoodsService;
 import com.sqn.seckill.service.OrderService;
 import com.sqn.seckill.service.SeckillOrderService;
 import com.sqn.seckill.vo.GoodsVO;
+import com.sqn.seckill.vo.RespBean;
 import com.sqn.seckill.vo.RespBeanEnum;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * Title: SecKillController
@@ -35,6 +39,9 @@ public class SecKillController {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     /**
      * 秒杀
      * 1000*1*10
@@ -46,8 +53,8 @@ public class SecKillController {
      * @param goodsId
      * @return
      */
-    @RequestMapping("/doSeckill")
-    public String doSeckill(Model model, User user, Long goodsId) {
+    @RequestMapping("/doSeckill2")
+    public String doSeckill2l2(Model model, User user, Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return "login";
@@ -71,5 +78,71 @@ public class SecKillController {
         model.addAttribute("order", order);
         model.addAttribute("goods", goods);
         return "orderDetail";
+    }
+
+    /**
+     * 秒杀 静态化
+     * 1000*1*10
+     * windows优化前QPS:467.5/sec
+     * linux优化前QPS:94.4/sec
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/doSeckill3",method = RequestMethod.POST)
+    @ResponseBody
+    public RespBean doSeckill3(User user, Long goodsId) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        GoodsVO goods = goodsService.findGoodsVOByGoodsId(goodsId);
+
+        //判断库存是否足够
+        if (goods.getStockCount() < 1) {
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+
+        //判断是否重复抢购
+        SeckillOrder seckillOrder = seckillOrderService.getOne(new QueryWrapper<SeckillOrder>().eq("user_id", user.getId()).eq("goods_id", goodsId));
+        if (seckillOrder != null) {
+            return RespBean.error(RespBeanEnum.REPEATE_ERROR);
+        }
+        Order order = orderService.seckill(user, goods);
+        return RespBean.success(order);
+    }
+
+    /**
+     * 秒杀 静态化 解决超卖问题
+     * 1000*1*10
+     * windows优化前QPS:467.5/sec
+     * linux优化前QPS:94.4/sec
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/doSeckill",method = RequestMethod.POST)
+    @ResponseBody
+    public RespBean doSeckill(User user, Long goodsId) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        GoodsVO goods = goodsService.findGoodsVOByGoodsId(goodsId);
+
+        //判断库存是否足够
+        if (goods.getStockCount() < 1) {
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+
+        //判断是否重复抢购,从redis中读取
+        SeckillOrder seckillOrder = (SeckillOrder) redisTemplate.opsForValue().get("order:" + user.getId() + ":" + goodsId);
+        if (seckillOrder != null) {
+            return RespBean.error(RespBeanEnum.REPEATE_ERROR);
+        }
+        Order order = orderService.seckill(user, goods);
+        return RespBean.success(order);
     }
 }

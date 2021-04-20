@@ -36,7 +36,7 @@
             <td id="seckillTip">
                 <input type="hidden" id="remainSeconds" th:value="${remainSeconds}">
                 <span th:if="${secKillStatus eq 0}">秒杀开始倒计时：<span id="countDown"
-                                                                th:text="${remainSeconds}"></span>秒</span>
+                                                                  th:text="${remainSeconds}"></span>秒</span>
                 <span th:if="${secKillStatus eq 1}">秒杀进行中</span>
                 <span th:if="${secKillStatus eq 2}">秒杀已结束</span>
             </td>
