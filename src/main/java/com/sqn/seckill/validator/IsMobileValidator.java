@@ -1,7 +1,7 @@
 package com.sqn.seckill.validator;
 
 import com.sqn.seckill.utils.ValidatorUtil;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
