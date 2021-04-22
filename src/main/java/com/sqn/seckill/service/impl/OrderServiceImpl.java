@@ -56,36 +56,36 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      * @param goods
      * @return
      */
-//    @Override
-//    @Transactional
-//    public Order seckill(User user, GoodsVO goods) {
-//        //秒杀商品表减库存
-//        SeckillGoods seckillGoods = seckillGoodsService.getOne(new QueryWrapper<SeckillGoods>().eq("goods_id", goods.getId()));
-//        seckillGoods.setStockCount(seckillGoods.getStockCount()-1);
-//        seckillGoodsService.updateById(seckillGoods);
-//
-//        //生成订单
-//        Order order = new Order();
-//        order.setUserId(user.getId());
-//        order.setGoodsId(goods.getId());
-//        order.setDeliveryAddrId(0L);
-//        order.setGoodsName(goods.getGoodsName());
-//        order.setGoodsCount(1);
-//        order.setGoodsPrice(goods.getSeckillPrice());
-//        order.setOrderChannel(1);
-//        order.setStatus(0);
-//        order.setCreateDate(new Date());
-//        orderMapper.insert(order);
-//
-//        //生成秒杀订单
-//        SeckillOrder seckillOrder = new SeckillOrder();
-//        seckillOrder.setUserId(user.getId());
-//        seckillOrder.setOrderId(order.getId());
-//        seckillOrder.setGoodsId(goods.getId());
-//        seckillOrderService.save(seckillOrder);
-//
-//        return order;
-//    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Order seckill1(User user, GoodsVO goods) {
+        //秒杀商品表减库存
+        SeckillGoods seckillGoods = seckillGoodsService.getOne(new QueryWrapper<SeckillGoods>().eq("goods_id", goods.getId()));
+        seckillGoods.setStockCount(seckillGoods.getStockCount() - 1);
+        seckillGoodsService.updateById(seckillGoods);
+
+        //生成订单
+        Order order = new Order();
+        order.setUserId(user.getId());
+        order.setGoodsId(goods.getId());
+        order.setDeliveryAddrId(0L);
+        order.setGoodsName(goods.getGoodsName());
+        order.setGoodsCount(1);
+        order.setGoodsPrice(goods.getSeckillPrice());
+        order.setOrderChannel(1);
+        order.setStatus(0);
+        order.setCreateDate(new Date());
+        orderMapper.insert(order);
+
+        //生成秒杀订单
+        SeckillOrder seckillOrder = new SeckillOrder();
+        seckillOrder.setUserId(user.getId());
+        seckillOrder.setOrderId(order.getId());
+        seckillOrder.setGoodsId(goods.getId());
+        seckillOrderService.save(seckillOrder);
+
+        return order;
+    }
 
     /**
      * 秒杀 解决超卖问题
@@ -95,7 +95,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      * @return
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Order seckill(User user, GoodsVO goods) {
         //秒杀商品表减库存
         SeckillGoods seckillGoods = seckillGoodsService.getOne(new QueryWrapper<SeckillGoods>().eq("goods_id", goods.getId()));
@@ -143,7 +143,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new GlobalException(RespBeanEnum.ORDER_NOT_EXIST);
         }
         Order order = orderMapper.selectById(orderId);
-        GoodsVO goodsVO = goodsService.findGoodsVOByGoodsId(order.getGoodsId());
+        GoodsVO goodsVO = goodsService.findGoodsVoByGoodsId(order.getGoodsId());
         OrderDetailVO detail = new OrderDetailVO();
         detail.setOrder(order);
         detail.setGoodsVO(goodsVO);

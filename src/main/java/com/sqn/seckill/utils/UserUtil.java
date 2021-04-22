@@ -33,7 +33,7 @@ public class UserUtil {
             user.setId(13000000000L + i);
             user.setNickname("user" + i);
             user.setSalt("1a2b3c4d");
-            user.setPassword(MD5Util.inputPassToDBPass("123456", user.getSalt()));
+            user.setPassword(Md5Util.inputPassToDbPass("123456", user.getSalt()));
             user.setLoginCount(1);
             user.setRegisterDate(new Date());
             users.add(user);
@@ -41,23 +41,23 @@ public class UserUtil {
         System.out.println("create user");
 
         //插入数据库
-//        Connection connection = getConnection();
-//        String sql = "insert into t_user(id,nickname,password,salt,register_date,login_count) values(?,?,?,?,?,?)";
-//        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-//        for (int i = 0; i < users.size(); i++) {
-//            User user = users.get(i);
-//            preparedStatement.setLong(1, user.getId());
-//            preparedStatement.setString(2, user.getNickname());
-//            preparedStatement.setString(3, user.getPassword());
-//            preparedStatement.setString(4, user.getSalt());
-//            preparedStatement.setTimestamp(5, new Timestamp(user.getRegisterDate().getTime()));
-//            preparedStatement.setInt(6, user.getLoginCount());
-//            preparedStatement.addBatch();
-//        }
-//        preparedStatement.executeBatch();
-//        preparedStatement.clearParameters();
-//        connection.close();
-//        System.out.println("insert to db");
+        Connection connection = getConnection();
+        String sql = "insert into t_user(id,nickname,password,salt,register_date,login_count) values(?,?,?,?,?,?)";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        for (int i = 0; i < users.size(); i++) {
+            User user = users.get(i);
+            preparedStatement.setLong(1, user.getId());
+            preparedStatement.setString(2, user.getNickname());
+            preparedStatement.setString(3, user.getPassword());
+            preparedStatement.setString(4, user.getSalt());
+            preparedStatement.setTimestamp(5, new Timestamp(user.getRegisterDate().getTime()));
+            preparedStatement.setInt(6, user.getLoginCount());
+            preparedStatement.addBatch();
+        }
+        preparedStatement.executeBatch();
+        preparedStatement.clearParameters();
+        connection.close();
+        System.out.println("insert to db");
 
         //登录，生成userTicket
         String urlString = "http://localhost:9999/login/doLogin";
@@ -74,7 +74,7 @@ public class UserUtil {
             co.setRequestMethod("POST");
             co.setDoOutput(true);
             OutputStream outputStream = co.getOutputStream();
-            String params = "mobile=" + user.getId() + "&password=" + MD5Util.inputPassToFormPass("123456");
+            String params = "mobile=" + user.getId() + "&password=" + Md5Util.inputPassToFormPass("123456");
             outputStream.write(params.getBytes());
             outputStream.flush();
             InputStream inputStream = co.getInputStream();
@@ -101,7 +101,12 @@ public class UserUtil {
         System.out.println("over");
     }
 
-    //获取数据库连接
+    /**
+     * 获取数据库连接
+     *
+     * @return
+     * @throws Exception
+     */
     private static Connection getConnection() throws Exception {
         String url = "jdbc:mysql://localhost:3306/seckill?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai";
         String username = "root";

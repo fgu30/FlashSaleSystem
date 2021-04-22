@@ -1,7 +1,7 @@
 package com.sqn.seckill.service;
 
-import com.sqn.seckill.entity.Order;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.sqn.seckill.entity.Order;
 import com.sqn.seckill.entity.User;
 import com.sqn.seckill.vo.GoodsVO;
 import com.sqn.seckill.vo.OrderDetailVO;
@@ -15,6 +15,15 @@ import com.sqn.seckill.vo.OrderDetailVO;
  * @since 2021-04-15
  */
 public interface OrderService extends IService<Order> {
+
+    /**
+     * 秒杀 出现超卖问题
+     *
+     * @param user
+     * @param goods
+     * @return
+     */
+    Order seckill1(User user, GoodsVO goods);
 
     /**
      * 秒杀

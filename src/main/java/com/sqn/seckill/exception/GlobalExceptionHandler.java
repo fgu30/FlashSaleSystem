@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public RespBean ExceptionHandler(Exception e) {
+    public RespBean exceptionHandler(Exception e) {
         if (e instanceof GlobalException) {
             GlobalException ex = (GlobalException) e;
             return RespBean.error(ex.getRespBeanEnum());

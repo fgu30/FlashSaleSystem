@@ -2,16 +2,15 @@ package com.sqn.seckill.controller;
 
 
 import com.sqn.seckill.entity.User;
-import com.sqn.seckill.rabbitmq.MQSender;
+import com.sqn.seckill.rabbitmq.MqSender;
 import com.sqn.seckill.service.UserService;
 import com.sqn.seckill.utils.CookieUtil;
-import com.sqn.seckill.utils.MD5Util;
+import com.sqn.seckill.utils.Md5Util;
 import com.sqn.seckill.vo.RespBean;
 import com.sqn.seckill.vo.RespBeanEnum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -31,7 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 public class UserController {
 
     @Autowired
-    private MQSender mqSender;
+    private MqSender mqSender;
 
     @Autowired
     private UserService userService;
@@ -54,7 +53,7 @@ public class UserController {
         if (StringUtils.isEmpty(userTicket)) {
             User user = userService.getById(mobile);
             if (user != null) {
-                user.setPassword(MD5Util.formPassToDBPass(password,user.getSalt()));
+                user.setPassword(Md5Util.formPassToDbPass(password,user.getSalt()));
                 userService.updateById(user);
                 return RespBean.success();
             }

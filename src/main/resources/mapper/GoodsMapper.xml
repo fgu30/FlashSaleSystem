@@ -35,7 +35,7 @@
     </select>
 
     <!--获取商品详情-->
-    <select id="findGoodsVOByGoodsId" resultType="com.sqn.seckill.vo.GoodsVO">
+    <select id="findGoodsVoByGoodsId" resultType="com.sqn.seckill.vo.GoodsVO">
         SELECT g.id,
                g.goods_name,
                g.goods_title,

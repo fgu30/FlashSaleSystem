@@ -22,7 +22,7 @@ public class GoodsDetailVO {
 
     private GoodsVO goodsVO;
 
-    private int secKillStatus;
+    private Integer secKillStatus;
 
     private Long remainSeconds;
 

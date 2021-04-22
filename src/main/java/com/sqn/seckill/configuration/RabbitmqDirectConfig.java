@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Title: RabbitMQDirectConfig
+ * Title: RabbitmqDirectConfig
  * Description:
  *
  * @author sqn
@@ -16,14 +16,22 @@ import org.springframework.context.annotation.Configuration;
  * @date 2021/4/21 0021 下午 12:05
  */
 @Configuration
-public class RabbitMQDirectConfig {
+public class RabbitmqDirectConfig {
 
-    //队列 queue
+    /**
+     * 队列 queue
+     */
     private static final String QUEUE_DIRECT_01 = "queue_direct01";
     private static final String QUEUE_DIRECT_02 = "queue_direct02";
-    //交换机 exchange
+
+    /**
+     * 交换机 exchange
+     */
     private static final String DIRECT_EXCHANGE = "directExchange";
-    //路由键 routingkey
+
+    /**
+     * 路由键 routingkey #表示0或多个单词，*表示一个单词
+     */
     private static final String QUEUE_RED = "queue.red";
     private static final String QUEUE_GREEN = "queue.green";
 

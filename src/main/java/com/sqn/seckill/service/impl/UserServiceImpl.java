@@ -6,7 +6,7 @@ import com.sqn.seckill.exception.GlobalException;
 import com.sqn.seckill.mapper.UserMapper;
 import com.sqn.seckill.service.UserService;
 import com.sqn.seckill.utils.CookieUtil;
-import com.sqn.seckill.utils.MD5Util;
+import com.sqn.seckill.utils.Md5Util;
 import com.sqn.seckill.utils.UUIDUtil;
 import com.sqn.seckill.vo.LoginVO;
 import com.sqn.seckill.vo.RespBean;
@@ -59,7 +59,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (null == user) {
             throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
         }
-        if (!MD5Util.formPassToDBPass(password, user.getSalt()).equals(user.getPassword())) {
+        if (!Md5Util.formPassToDbPass(password, user.getSalt()).equals(user.getPassword())) {
             throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
         }
         //生成Cookie
@@ -103,7 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null) {
             throw new GlobalException(RespBeanEnum.MOBILE_NOT_EXIST);
         }
-        user.setPassword(MD5Util.formPassToDBPass(password,user.getSalt()));
+        user.setPassword(Md5Util.formPassToDbPass(password,user.getSalt()));
         int result = userMapper.updateById(user);
         if (1 == result) {
             //删除Redis

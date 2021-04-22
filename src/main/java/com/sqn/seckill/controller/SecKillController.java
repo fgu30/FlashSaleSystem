@@ -60,7 +60,7 @@ public class SecKillController {
             return "login";
         }
         model.addAttribute("user", user);
-        GoodsVO goods = goodsService.findGoodsVOByGoodsId(goodsId);
+        GoodsVO goods = goodsService.findGoodsVoByGoodsId(goodsId);
 
         //判断库存是否足够
         if (goods.getStockCount() < 1) {
@@ -97,7 +97,7 @@ public class SecKillController {
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
-        GoodsVO goods = goodsService.findGoodsVOByGoodsId(goodsId);
+        GoodsVO goods = goodsService.findGoodsVoByGoodsId(goodsId);
 
         //判断库存是否足够
         if (goods.getStockCount() < 1) {
@@ -130,7 +130,7 @@ public class SecKillController {
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
-        GoodsVO goods = goodsService.findGoodsVOByGoodsId(goodsId);
+        GoodsVO goods = goodsService.findGoodsVoByGoodsId(goodsId);
 
         //判断库存是否足够
         if (goods.getStockCount() < 1) {
