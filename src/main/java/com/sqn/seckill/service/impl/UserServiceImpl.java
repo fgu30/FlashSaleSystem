@@ -11,6 +11,7 @@ import com.sqn.seckill.utils.UUIDUtil;
 import com.sqn.seckill.vo.LoginVO;
 import com.sqn.seckill.vo.RespBean;
 import com.sqn.seckill.vo.RespBeanEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -28,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  * @since 2021-04-07
  */
 @Service
+@Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Autowired
@@ -113,4 +115,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         return RespBean.error(RespBeanEnum.PASSWORD_UPDATE_FAIL);
     }
+
+    /**
+     *  测试 JunitGenerator2.0
+     */
+    public void testJunitGenerator(){
+        log.debug("debug");
+        log.error("error");
+        log.trace("trace");
+        log.warn("warn");
+        log.info("info");
+    }
+
 }

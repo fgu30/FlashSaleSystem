@@ -45,4 +45,8 @@ public interface UserService extends IService<User> {
      */
     public RespBean updatePassword(String userTicket, String password, HttpServletRequest request, HttpServletResponse response);
 
+    /**
+     * 测试 JunitGenerator2.0
+     */
+    void testJunitGenerator();
 }
