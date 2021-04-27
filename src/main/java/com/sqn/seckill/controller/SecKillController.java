@@ -10,13 +10,18 @@ import com.sqn.seckill.service.SeckillOrderService;
 import com.sqn.seckill.vo.GoodsVO;
 import com.sqn.seckill.vo.RespBean;
 import com.sqn.seckill.vo.RespBeanEnum;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
 
 /**
  * Title: SecKillController
@@ -28,7 +33,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  */
 @Controller
 @RequestMapping("/seckill")
-public class SecKillController {
+public class SecKillController implements InitializingBean {
 
     @Autowired
     private GoodsService goodsService;
@@ -54,7 +59,7 @@ public class SecKillController {
      * @return
      */
     @RequestMapping("/doSeckill2")
-    public String doSeckill2l2(Model model, User user, Long goodsId) {
+    public String doSeckill2(Model model, User user, Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return "login";
@@ -90,7 +95,7 @@ public class SecKillController {
      * @param goodsId
      * @return
      */
-    @RequestMapping(value = "/doSeckill3",method = RequestMethod.POST)
+    @RequestMapping(value = "/doSeckill3", method = RequestMethod.POST)
     @ResponseBody
     public RespBean doSeckill3(User user, Long goodsId) {
         //判断用户是否登录
@@ -123,9 +128,9 @@ public class SecKillController {
      * @param goodsId
      * @return
      */
-    @RequestMapping(value = "/doSeckill",method = RequestMethod.POST)
+    @RequestMapping(value = "/doSeckill4", method = RequestMethod.POST)
     @ResponseBody
-    public RespBean doSeckill(User user, Long goodsId) {
+    public RespBean doSeckill4(User user, Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
@@ -144,5 +149,66 @@ public class SecKillController {
         }
         Order order = orderService.seckill(user, goods);
         return RespBean.success(order);
+    }
+
+    /**
+     * 秒杀 静态化 解决超卖问题  redis预减库存
+     * 1000*1*10
+     * windows优化前QPS:467.5/sec
+     * linux优化前QPS:94.4/sec
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/doSeckill", method = RequestMethod.POST)
+    @ResponseBody
+    public RespBean doSeckill(User user, Long goodsId) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+
+        //redis操作
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        //判断是否重复抢购,从redis中读取
+        SeckillOrder seckillOrder = (SeckillOrder) valueOperations.get("order:" + user.getId() + ":" + goodsId);
+        if (seckillOrder != null) {
+            return RespBean.error(RespBeanEnum.REPEATE_ERROR);
+        }
+        //redis预减库存
+        Long stock = valueOperations.decrement("seckillGoods:" + goodsId);
+        if (stock < 0) {
+            valueOperations.increment("seckillGoods:" + goodsId);
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+
+        //数据库操作
+        GoodsVO goods = goodsService.findGoodsVoByGoodsId(goodsId);
+        //判断库存是否足够
+        if (goods.getStockCount() < 1) {
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+        //生成订单
+        Order order = orderService.seckill(user, goods);
+
+        return RespBean.success(order);
+    }
+
+
+    /**
+     * 系统初始化，把商品库存数量加载到redis
+     *
+     * @throws Exception
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        List<GoodsVO> list = goodsService.findGoodsVO();
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        list.forEach(goodsVO -> {
+            redisTemplate.opsForValue().set("seckillGoods:" + goodsVO.getId(), goodsVO.getStockCount());
+        });
     }
 }

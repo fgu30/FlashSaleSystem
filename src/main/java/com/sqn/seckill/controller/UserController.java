@@ -116,5 +116,23 @@ public class UserController {
         mqSender.sendTopic02("Hello,Green!");
     }
 
+    /**
+     * 测试发送rabbitMQ消息 headers
+     */
+    @RequestMapping("/mq/headers01")
+    @ResponseBody
+    public void headers01(){
+        mqSender.sendHeaders01("Hello,Headers01!");
+    }
+
+    /**
+     * 测试发送rabbitMQ消息 headers
+     */
+    @RequestMapping("/mq/headers02")
+    @ResponseBody
+    public void headers02(){
+        mqSender.sendHeaders02("Hello,Headers02!");
+    }
+
 }
 

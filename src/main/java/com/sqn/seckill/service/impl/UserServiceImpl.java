@@ -8,6 +8,7 @@ import com.sqn.seckill.service.UserService;
 import com.sqn.seckill.utils.CookieUtil;
 import com.sqn.seckill.utils.Md5Util;
 import com.sqn.seckill.utils.UUIDUtil;
+import com.sqn.seckill.utils.ValidatorUtil;
 import com.sqn.seckill.vo.LoginVO;
 import com.sqn.seckill.vo.RespBean;
 import com.sqn.seckill.vo.RespBeanEnum;
@@ -39,7 +40,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private RedisTemplate redisTemplate;
 
     /**
-     * 登录功能
+     * 登录功能 user存入session中
      *
      * @param loginVO
      * @param request
@@ -47,15 +48,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @return
      */
     @Override
-    public RespBean doLogin(LoginVO loginVO, HttpServletRequest request, HttpServletResponse response) {
+    public RespBean doLogin1(LoginVO loginVO, HttpServletRequest request, HttpServletResponse response) {
         String mobile = loginVO.getMobile();
         String password = loginVO.getPassword();
-//        if(StringUtils.isEmpty(mobile)||StringUtils.isEmpty(password)){
-//            return RespBean.error(RespBeanEnum.LOGIN_ERROR);
-//        }
-//        if(!ValidatorUtil.isMobile(mobile)){
-//            return RespBean.error(RespBeanEnum.MOBILE_ERROR);
-//        }
+        if(StringUtils.isEmpty(mobile)||StringUtils.isEmpty(password)){
+            return RespBean.error(RespBeanEnum.LOGIN_ERROR);
+        }
+        if(!ValidatorUtil.isMobile(mobile)){
+            return RespBean.error(RespBeanEnum.MOBILE_ERROR);
+        }
         //根据手机号码获取用户
         User user = userMapper.selectById(mobile);
         if (null == user) {
@@ -66,7 +67,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         //生成Cookie
         String ticket = UUIDUtil.uuid();
-//        request.getSession().setAttribute(ticket, user);
+        request.getSession().setAttribute(ticket, user);
+        //将用户信息存入redis中
+        CookieUtil.setCookie(request, response, "userTicket", ticket);
+        return RespBean.success(ticket);
+    }
+
+    /**
+     * 登录功能  user存入redis
+     *
+     * @param loginVO
+     * @param request
+     * @param response
+     * @return
+     */
+    @Override
+    public RespBean doLogin(LoginVO loginVO, HttpServletRequest request, HttpServletResponse response) {
+        String mobile = loginVO.getMobile();
+        String password = loginVO.getPassword();
+        //根据手机号码获取用户
+        User user = userMapper.selectById(mobile);
+        if (null == user) {
+            throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
+        }
+        if (!Md5Util.formPassToDbPass(password, user.getSalt()).equals(user.getPassword())) {
+            throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
+        }
+        //生成Cookie
+        String ticket = UUIDUtil.uuid();
         //将用户信息存入redis中
         redisTemplate.opsForValue().set("user:" + ticket, user);
         CookieUtil.setCookie(request, response, "userTicket", ticket);
@@ -119,6 +147,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     /**
      *  测试 JunitGenerator2.0
      */
+    @Override
     public void testJunitGenerator(){
         log.debug("debug");
         log.error("error");

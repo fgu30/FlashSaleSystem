@@ -1,6 +1,8 @@
 package com.sqn.seckill.rabbitmq;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -61,7 +63,7 @@ public class MqSender {
     }
 
     /**
-     * /topic模式
+     * topic模式
      *
      * @param msg
      */
@@ -71,7 +73,7 @@ public class MqSender {
     }
 
     /**
-     * /topic模式
+     * topic模式
      *
      * @param msg
      */
@@ -79,4 +81,33 @@ public class MqSender {
         log.info("发送Topic02消息：" + msg);
         rabbitTemplate.convertAndSend("topicExchange", "message.queue.green.abc", msg);
     }
+
+    /**
+     * headers模式
+     *
+     * @param msg
+     */
+    public void sendHeaders01(String msg) {
+        log.info("发送Headers消息：" + msg);
+        MessageProperties properties = new MessageProperties();
+        properties.setHeader("color", "red");
+        properties.setHeader("speed", "fast");
+        Message message = new Message(msg.getBytes(),properties);
+        rabbitTemplate.convertAndSend("headersExchange", "", message);
+    }
+
+    /**
+     * headers模式
+     *
+     * @param msg
+     */
+    public void sendHeaders02(String msg) {
+        log.info("发送Headers消息：" + msg);
+        MessageProperties properties = new MessageProperties();
+        properties.setHeader("color", "red");
+        properties.setHeader("speed", "normal");
+        Message message = new Message(msg.getBytes(),properties);
+        rabbitTemplate.convertAndSend("headersExchange", "", message);
+    }
+
 }

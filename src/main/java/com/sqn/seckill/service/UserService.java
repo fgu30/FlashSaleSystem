@@ -17,6 +17,17 @@ import javax.servlet.http.HttpServletResponse;
  * @since 2021-04-07
  */
 public interface UserService extends IService<User> {
+
+    /**
+     * 登录功能 user存入session中
+     *
+     * @param loginVO
+     * @param request
+     * @param response
+     * @return
+     */
+    public RespBean doLogin1(LoginVO loginVO, HttpServletRequest request, HttpServletResponse response);
+
     /**
      * 登录功能
      *
