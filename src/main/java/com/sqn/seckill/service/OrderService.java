@@ -2,8 +2,6 @@ package com.sqn.seckill.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.sqn.seckill.entity.Order;
-import com.sqn.seckill.entity.User;
-import com.sqn.seckill.vo.GoodsVO;
 import com.sqn.seckill.vo.OrderDetailVO;
 
 /**
@@ -17,24 +15,6 @@ import com.sqn.seckill.vo.OrderDetailVO;
 public interface OrderService extends IService<Order> {
 
     /**
-     * 秒杀 出现超卖问题
-     *
-     * @param user
-     * @param goods
-     * @return
-     */
-    Order seckill1(User user, GoodsVO goods);
-
-    /**
-     * 秒杀
-     *
-     * @param user
-     * @param goods
-     * @return
-     */
-    Order seckill(User user, GoodsVO goods);
-
-    /**
      * 订单详情
      *
      * @param orderId
@@ -42,19 +22,4 @@ public interface OrderService extends IService<Order> {
      */
     OrderDetailVO detail(Long orderId);
 
-    /**
-     * 获取秒杀结果
-     *
-     * @param userId
-     * @param goodsId
-     * @return
-     */
-    long getSeckillResult(Long userId, Long goodsId);
-
-    /**
-     * 秒杀重置：方便测试
-     *
-     * @return
-     */
-    boolean getSeckillReset();
 }

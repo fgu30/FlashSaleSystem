@@ -7,8 +7,8 @@ import com.sqn.seckill.entity.Order;
 import com.sqn.seckill.entity.SeckillOrder;
 import com.sqn.seckill.entity.User;
 import com.sqn.seckill.service.GoodsService;
-import com.sqn.seckill.service.OrderService;
 import com.sqn.seckill.service.SeckillOrderService;
+import com.sqn.seckill.service.SeckillService;
 import com.sqn.seckill.vo.GoodsVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -34,7 +34,7 @@ public class SecKillRabbitmqReceiver {
     private SeckillOrderService seckillOrderService;
 
     @Autowired
-    private OrderService orderService;
+    private SeckillService seckillService;
 
     /**
      * 接收秒杀消息
@@ -61,7 +61,7 @@ public class SecKillRabbitmqReceiver {
         }
 
         //秒杀操作：减库存，下订单，写入秒杀订单
-        Order order = orderService.seckill(user, goods);
+        Order order = seckillService.seckill(user, goods);
     }
 
 }

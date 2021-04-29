@@ -7,8 +7,8 @@ import com.sqn.seckill.entity.User;
 import com.sqn.seckill.rabbitmq.SecKillRabbitmqSender;
 import com.sqn.seckill.rabbitmq.SeckillMessage;
 import com.sqn.seckill.service.GoodsService;
-import com.sqn.seckill.service.OrderService;
 import com.sqn.seckill.service.SeckillOrderService;
+import com.sqn.seckill.service.SeckillService;
 import com.sqn.seckill.vo.GoodsVO;
 import com.sqn.seckill.vo.RespBean;
 import com.sqn.seckill.vo.RespBeanEnum;
@@ -19,10 +19,12 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +49,7 @@ public class SecKillController implements InitializingBean {
     private SeckillOrderService seckillOrderService;
 
     @Autowired
-    private OrderService orderService;
+    private SeckillService seckillService;
 
     @Autowired
     private RedisTemplate redisTemplate;
@@ -55,6 +57,9 @@ public class SecKillController implements InitializingBean {
     @Autowired
     private SecKillRabbitmqSender sender;
 
+    /**
+     * 内存标记秒杀商品库存不足
+     */
     private Map<Long, Boolean> localOverMap = new HashMap<>();
 
     /**
@@ -86,7 +91,7 @@ public class SecKillController implements InitializingBean {
      * @return
      */
     @RequestMapping("/doSeckill2")
-    public String doSeckill2(Model model, User user, Long goodsId) {
+    public String doSecKill2(Model model, User user, Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return "login";
@@ -106,7 +111,7 @@ public class SecKillController implements InitializingBean {
             model.addAttribute("errmsg", RespBeanEnum.REPEATE_ERROR.getMessage());
             return "secKillFail";
         }
-        Order order = orderService.seckill(user, goods);
+        Order order = seckillService.seckill(user, goods);
         model.addAttribute("order", order);
         model.addAttribute("goods", goods);
         return "orderDetail";
@@ -124,7 +129,7 @@ public class SecKillController implements InitializingBean {
      */
     @RequestMapping(value = "/doSeckill3", method = RequestMethod.POST)
     @ResponseBody
-    public RespBean doSeckill3(User user, Long goodsId) {
+    public RespBean doSecKill3(User user, Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
@@ -141,7 +146,7 @@ public class SecKillController implements InitializingBean {
         if (seckillOrder != null) {
             return RespBean.error(RespBeanEnum.REPEATE_ERROR);
         }
-        Order order = orderService.seckill(user, goods);
+        Order order = seckillService.seckill(user, goods);
         return RespBean.success(order);
     }
 
@@ -157,7 +162,7 @@ public class SecKillController implements InitializingBean {
      */
     @RequestMapping(value = "/doSeckill4", method = RequestMethod.POST)
     @ResponseBody
-    public RespBean doSeckill4(User user, Long goodsId) {
+    public RespBean doSecKill4(User user, Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
@@ -175,18 +180,18 @@ public class SecKillController implements InitializingBean {
             return RespBean.error(RespBeanEnum.REPEATE_ERROR);
         }
         //秒杀操作：减库存，下订单，写入秒杀订单
-        Order order = orderService.seckill(user, goods);
+        Order order = seckillService.seckill(user, goods);
 
         return RespBean.success(order);
     }
 
     /**
-     * 秒杀 静态化   解决超卖问题    redis预减库存     rabbitmq消息入队
+     * 秒杀 静态化   解决超卖问题    redis预减库存 rabbitmq消息入队
      * 10000*1*10
      * windows优化前QPS:467.5/sec
      * linux优化前QPS:94.4/sec
      * <p>
-     * windows优化后QPS:1115.4/sec
+     * windows优化后QPS:1315.4/sec
      * linux优化后QPS:94.4/sec
      *
      * @param user
@@ -195,10 +200,66 @@ public class SecKillController implements InitializingBean {
      */
     @RequestMapping(value = "/doSeckill", method = RequestMethod.POST)
     @ResponseBody
-    public RespBean doSeckill(User user, Long goodsId) {
+    public RespBean doSecKill(User user, @RequestParam("goodsId") Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+
+        //内存标记，减少redis访问
+        boolean over = localOverMap.get(goodsId);
+        if (over) {
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+
+        //redis操作
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        //判断是否重复抢购,从redis中读取
+        SeckillOrder seckillOrder = (SeckillOrder) valueOperations.get("order:" + user.getId() + ":" + goodsId);
+        if (seckillOrder != null) {
+            return RespBean.error(RespBeanEnum.REPEATE_ERROR);
+        }
+        //redis预减库存
+        Long stock = valueOperations.decrement("seckillGoods:" + goodsId);
+        if (stock < 0) {
+            localOverMap.put(goodsId, true);
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+
+        //入队
+        SeckillMessage seckillMessage = new SeckillMessage();
+        seckillMessage.setUser(user);
+        seckillMessage.setGoodsId(goodsId);
+        sender.sendSeckillMessage(seckillMessage);
+
+        return RespBean.success();
+    }
+
+    /**
+     * 秒杀 静态化   解决超卖问题    redis预减库存 rabbitmq消息入队    隐藏秒杀接口地址    数学公式验证码
+     * 10000*1*10
+     * windows优化前QPS:467.5/sec
+     * linux优化前QPS:94.4/sec
+     * <p>
+     * windows优化后QPS:1315.4/sec
+     * linux优化后QPS:94.4/sec
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/{path}/doSeckill", method = RequestMethod.POST)
+    @ResponseBody
+    public RespBean doSecKillPath(User user, @RequestParam("goodsId") Long goodsId, @PathVariable("path") String path) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+
+        //隐藏接口，验证path
+        boolean check = seckillService.checkPath(user, goodsId, path);
+        if (!check) {
+            return RespBean.error(RespBeanEnum.REQUEST_ILLEGAL);
         }
 
         //内存标记，减少redis访问
@@ -242,12 +303,12 @@ public class SecKillController implements InitializingBean {
      */
     @RequestMapping(value = "/result", method = RequestMethod.GET)
     @ResponseBody
-    public RespBean seckillResult(User user, Long goodsId) {
+    public RespBean secKillResult(User user, Long goodsId) {
         //判断用户是否登录
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
-        long result = orderService.getSeckillResult(user.getId(), goodsId);
+        long result = seckillService.getSeckillResult(user.getId(), goodsId);
         return RespBean.success(result);
     }
 
@@ -258,20 +319,75 @@ public class SecKillController implements InitializingBean {
      */
     @RequestMapping(value = "/reset", method = RequestMethod.GET)
     @ResponseBody
-    public RespBean seckillReset() {
+    public RespBean secKillReset() {
         List<GoodsVO> list = goodsService.findGoodsVO();
         list.forEach(goodsVO -> {
             redisTemplate.opsForValue().set("seckillGoods:" + goodsVO.getId(), 10);
             localOverMap.put(goodsVO.getId(), false);
         });
-        Set<String> keys = redisTemplate.keys("order:" + "*");
-        redisTemplate.delete(keys);
+        Set<String> orders = redisTemplate.keys("order:" + "*");
+        redisTemplate.delete(orders);
         redisTemplate.delete("isGoodsOver");
-        boolean result = orderService.getSeckillReset();
+        boolean result = seckillService.getSeckillReset();
         if (!result) {
             RespBean.error(RespBeanEnum.ERROR);
         }
         return RespBean.success(result);
+    }
+
+    /**
+     * 隐藏秒杀接口地址，获取秒杀接口地址
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getSecKillPath(User user, @RequestParam("goodsId") Long goodsId, @RequestParam("verifyCode") int verifyCode) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+
+        //检查验证码
+        boolean check = seckillService.CheckVerifyCode(user, goodsId, verifyCode);
+        if (!check) {
+            return RespBean.error(RespBeanEnum.VERIFYCODE_ERROR);
+        }
+
+        //生成秒杀接口path，存入redis
+        String path = seckillService.createSecKillPath(user, goodsId);
+        return RespBean.success(path);
+    }
+
+    /**
+     * 验证码
+     *
+     * @param response
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/verifyCode", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getVerifyCode(HttpServletResponse response, User user, Long goodsId) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        //生成验证码
+        BufferedImage image = seckillService.createVerifyCode(user, goodsId);
+        try {
+            OutputStream out = response.getOutputStream();
+            ImageIO.write(image, "JPEG", out);
+            out.flush();
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return RespBean.error(RespBeanEnum.VERIFYCODE_GENERATE_ERROR, e.getMessage());
+        }
+        return RespBean.success();
     }
 
 }
