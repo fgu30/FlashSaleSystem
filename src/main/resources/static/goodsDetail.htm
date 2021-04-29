@@ -165,16 +165,34 @@
         }
     }
 
-    function doSeckill() {
+    //轮询 秒杀结果
+    function getSecKillResult(goodsId) {
+        g_showLoading();
         $.ajax({
-            url: "/seckill/doSeckill/",
-            type: "POST",
+            url: "/seckill/result",
+            type: "GET",
             data: {
                 goodsId: $("#goodsId").val()
             },
             success: function (data) {
                 if (data.code == 200) {
-                    window.location.href = "/orderDetail.htm?orderId=" + data.obj.id;
+                    var result = data.obj;
+                    if (result < 0) {
+                        layer.msg("抱歉，秒杀失败！")
+                    } else if (result == 0) {
+                        //继续轮询
+                        setTimeout(function () {
+                            getSecKillResult(goodsId);
+                        }, 50);
+                        // layer.msg("排队中，请稍等！")
+                    } else {
+                        layer.confirm("恭喜你，秒杀成功！查看订单？", {btn: ["确定", "取消"]},
+                            function () {
+                                window.location.href = "/orderDetail.htm?orderId=" + result;
+                            }, function () {
+                                layer.closeAll();
+                            });
+                    }
                 } else {
                     layer.msg(data.message);
                 }
@@ -182,7 +200,29 @@
             error: function () {
                 layer.msg("客户端请求出错");
             }
-        })
+        });
+    }
+
+    //秒杀
+    function doSeckill() {
+        $.ajax({
+            url: "/seckill/doSeckill",
+            type: "POST",
+            data: {
+                goodsId: $("#goodsId").val()
+            },
+            success: function (data) {
+                if (data.code == 200) {
+                    // window.location.href = "/orderDetail.htm?orderId=" + data.obj.id;
+                    getSecKillResult($("#goodsId").val());
+                } else {
+                    layer.msg(data.code + ":" + data.message);
+                }
+            },
+            error: function () {
+                layer.msg("客户端请求出错");
+            }
+        });
     }
 </script>
 </html>

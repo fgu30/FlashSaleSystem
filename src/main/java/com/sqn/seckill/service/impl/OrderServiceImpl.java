@@ -9,6 +9,8 @@ import com.sqn.seckill.entity.SeckillOrder;
 import com.sqn.seckill.entity.User;
 import com.sqn.seckill.exception.GlobalException;
 import com.sqn.seckill.mapper.OrderMapper;
+import com.sqn.seckill.mapper.SeckillGoodsMapper;
+import com.sqn.seckill.mapper.SeckillOrderMapper;
 import com.sqn.seckill.service.GoodsService;
 import com.sqn.seckill.service.OrderService;
 import com.sqn.seckill.service.SeckillGoodsService;
@@ -39,6 +41,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Autowired
     private OrderMapper orderMapper;
+
+    @Autowired
+    private SeckillOrderMapper seckillOrderMapper;
+
+    @Autowired
+    private SeckillGoodsMapper seckillGoodsMapper;
 
     @Autowired
     private SeckillOrderService seckillOrderService;
@@ -102,6 +110,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         seckillGoods.setStockCount(seckillGoods.getStockCount() - 1);
         boolean result = seckillGoodsService.update(new UpdateWrapper<SeckillGoods>().setSql("stock_count=" + "stock_count-1").eq("goods_id", seckillGoods.getId()).gt("stock_count", 0));
         if (!result) {
+            //减库存失败，商品卖完了
+            setGoodsOver(goods.getId());
             return null;
         }
 
@@ -132,6 +142,64 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     /**
+     * 获取秒杀结果
+     *
+     * @param userId
+     * @param goodsId
+     * @return
+     */
+    @Override
+    public long getSeckillResult(Long userId, Long goodsId) {
+        SeckillOrder seckillOrder = seckillOrderService.getOne(new QueryWrapper<SeckillOrder>().eq("user_id", userId).eq("goods_id", goodsId));
+        if (seckillOrder != null) {
+            //秒杀成功
+            return seckillOrder.getOrderId();
+        } else {
+            boolean isOver = getGoodsOver(goodsId);
+            if (isOver) {
+                //秒杀失败，库存不足，商品已经卖完
+                return -1;
+            } else {
+                //排队中
+                return 0;
+            }
+        }
+    }
+
+    /**
+     * 秒杀重置：方便测试
+     *
+     * @return
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean getSeckillReset() {
+        orderMapper.delete(null);
+        seckillOrderMapper.delete(null);
+        boolean update = seckillGoodsService.update(new UpdateWrapper<SeckillGoods>().setSql("stock_count=" + 10));
+        return update;
+    }
+
+    /**
+     * 设置redis key  isGoodsOver 秒杀商品库存不足
+     *
+     * @param goodsId
+     */
+    private void setGoodsOver(Long goodsId) {
+        redisTemplate.opsForValue().set("isGoodsOver", goodsId);
+    }
+
+    /**
+     * 获取redis key  isGoodsOver 秒杀商品库存不足
+     *
+     * @param goodsId
+     * @return
+     */
+    private boolean getGoodsOver(Long goodsId) {
+        return redisTemplate.hasKey("isGoodsOver");
+    }
+
+    /**
      * 订单详情
      *
      * @param orderId
@@ -149,4 +217,5 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         detail.setGoodsVO(goodsVO);
         return detail;
     }
+
 }

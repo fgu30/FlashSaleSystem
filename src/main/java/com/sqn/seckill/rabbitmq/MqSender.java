@@ -92,7 +92,7 @@ public class MqSender {
         MessageProperties properties = new MessageProperties();
         properties.setHeader("color", "red");
         properties.setHeader("speed", "fast");
-        Message message = new Message(msg.getBytes(),properties);
+        Message message = new Message(msg.getBytes(), properties);
         rabbitTemplate.convertAndSend("headersExchange", "", message);
     }
 
@@ -106,7 +106,7 @@ public class MqSender {
         MessageProperties properties = new MessageProperties();
         properties.setHeader("color", "red");
         properties.setHeader("speed", "normal");
-        Message message = new Message(msg.getBytes(),properties);
+        Message message = new Message(msg.getBytes(), properties);
         rabbitTemplate.convertAndSend("headersExchange", "", message);
     }
 

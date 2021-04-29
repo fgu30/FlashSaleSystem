@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.sqn.seckill.entity.Order;
 import com.sqn.seckill.entity.SeckillOrder;
 import com.sqn.seckill.entity.User;
+import com.sqn.seckill.rabbitmq.SecKillRabbitmqSender;
+import com.sqn.seckill.rabbitmq.SeckillMessage;
 import com.sqn.seckill.service.GoodsService;
 import com.sqn.seckill.service.OrderService;
 import com.sqn.seckill.service.SeckillOrderService;
@@ -21,7 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Title: SecKillController
@@ -47,9 +52,31 @@ public class SecKillController implements InitializingBean {
     @Autowired
     private RedisTemplate redisTemplate;
 
+    @Autowired
+    private SecKillRabbitmqSender sender;
+
+    private Map<Long, Boolean> localOverMap = new HashMap<>();
+
+    /**
+     * 系统初始化，把商品库存数量加载到redis
+     *
+     * @throws Exception
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        List<GoodsVO> list = goodsService.findGoodsVO();
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        list.forEach(goodsVO -> {
+            redisTemplate.opsForValue().set("seckillGoods:" + goodsVO.getId(), goodsVO.getStockCount());
+            localOverMap.put(goodsVO.getId(), false);
+        });
+    }
+
     /**
      * 秒杀
-     * 1000*1*10
+     * 10000*1*10
      * windows优化前QPS:467.5/sec
      * linux优化前QPS:94.4/sec
      *
@@ -87,7 +114,7 @@ public class SecKillController implements InitializingBean {
 
     /**
      * 秒杀 静态化
-     * 1000*1*10
+     * 10000*1*10
      * windows优化前QPS:467.5/sec
      * linux优化前QPS:94.4/sec
      *
@@ -120,7 +147,7 @@ public class SecKillController implements InitializingBean {
 
     /**
      * 秒杀 静态化 解决超卖问题
-     * 1000*1*10
+     * 10000*1*10
      * windows优化前QPS:467.5/sec
      * linux优化前QPS:94.4/sec
      *
@@ -147,15 +174,20 @@ public class SecKillController implements InitializingBean {
         if (seckillOrder != null) {
             return RespBean.error(RespBeanEnum.REPEATE_ERROR);
         }
+        //秒杀操作：减库存，下订单，写入秒杀订单
         Order order = orderService.seckill(user, goods);
+
         return RespBean.success(order);
     }
 
     /**
-     * 秒杀 静态化 解决超卖问题  redis预减库存
-     * 1000*1*10
+     * 秒杀 静态化   解决超卖问题    redis预减库存     rabbitmq消息入队
+     * 10000*1*10
      * windows优化前QPS:467.5/sec
      * linux优化前QPS:94.4/sec
+     * <p>
+     * windows优化后QPS:1115.4/sec
+     * linux优化后QPS:94.4/sec
      *
      * @param user
      * @param goodsId
@@ -169,6 +201,12 @@ public class SecKillController implements InitializingBean {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
 
+        //内存标记，减少redis访问
+        boolean over = localOverMap.get(goodsId);
+        if (over) {
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+
         //redis操作
         ValueOperations valueOperations = redisTemplate.opsForValue();
         //判断是否重复抢购,从redis中读取
@@ -179,36 +217,61 @@ public class SecKillController implements InitializingBean {
         //redis预减库存
         Long stock = valueOperations.decrement("seckillGoods:" + goodsId);
         if (stock < 0) {
-            valueOperations.increment("seckillGoods:" + goodsId);
+            localOverMap.put(goodsId, true);
             return RespBean.error(RespBeanEnum.EMPTY_STOCK);
         }
 
-        //数据库操作
-        GoodsVO goods = goodsService.findGoodsVoByGoodsId(goodsId);
-        //判断库存是否足够
-        if (goods.getStockCount() < 1) {
-            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
-        }
-        //生成订单
-        Order order = orderService.seckill(user, goods);
+        //入队
+        SeckillMessage seckillMessage = new SeckillMessage();
+        seckillMessage.setUser(user);
+        seckillMessage.setGoodsId(goodsId);
+        sender.sendSeckillMessage(seckillMessage);
 
-        return RespBean.success(order);
+        return RespBean.success();
     }
-
 
     /**
-     * 系统初始化，把商品库存数量加载到redis
+     * 秒杀结果：
+     * orderId：成功
+     * -1：秒杀失败
+     * 0：排队中
      *
-     * @throws Exception
+     * @param user
+     * @param goodsId
+     * @return
      */
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        List<GoodsVO> list = goodsService.findGoodsVO();
-        if (CollectionUtils.isEmpty(list)) {
-            return;
+    @RequestMapping(value = "/result", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean seckillResult(User user, Long goodsId) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
-        list.forEach(goodsVO -> {
-            redisTemplate.opsForValue().set("seckillGoods:" + goodsVO.getId(), goodsVO.getStockCount());
-        });
+        long result = orderService.getSeckillResult(user.getId(), goodsId);
+        return RespBean.success(result);
     }
+
+    /**
+     * 秒杀重置：方便测试
+     *
+     * @return
+     */
+    @RequestMapping(value = "/reset", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean seckillReset() {
+        List<GoodsVO> list = goodsService.findGoodsVO();
+        list.forEach(goodsVO -> {
+            redisTemplate.opsForValue().set("seckillGoods:" + goodsVO.getId(), 10);
+            localOverMap.put(goodsVO.getId(), false);
+        });
+        Set<String> keys = redisTemplate.keys("order:" + "*");
+        redisTemplate.delete(keys);
+        redisTemplate.delete("isGoodsOver");
+        boolean result = orderService.getSeckillReset();
+        if (!result) {
+            RespBean.error(RespBeanEnum.ERROR);
+        }
+        return RespBean.success(result);
+    }
+
 }

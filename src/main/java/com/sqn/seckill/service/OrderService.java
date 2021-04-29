@@ -41,4 +41,20 @@ public interface OrderService extends IService<Order> {
      * @return
      */
     OrderDetailVO detail(Long orderId);
+
+    /**
+     * 获取秒杀结果
+     *
+     * @param userId
+     * @param goodsId
+     * @return
+     */
+    long getSeckillResult(Long userId, Long goodsId);
+
+    /**
+     * 秒杀重置：方便测试
+     *
+     * @return
+     */
+    boolean getSeckillReset();
 }
