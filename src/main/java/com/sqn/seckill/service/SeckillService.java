@@ -86,5 +86,5 @@ public interface SeckillService {
      * @param verifyCode
      * @return
      */
-    boolean CheckVerifyCode(User user, Long goodsId, int verifyCode);
+    boolean checkVerifyCode(User user, Long goodsId, int verifyCode);
 }

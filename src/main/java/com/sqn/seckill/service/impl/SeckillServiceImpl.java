@@ -261,7 +261,7 @@ public class SeckillServiceImpl implements SeckillService {
      * @return
      */
     @Override
-    public boolean CheckVerifyCode(User user, Long goodsId, int verifyCode) {
+    public boolean checkVerifyCode(User user, Long goodsId, int verifyCode) {
         if (user == null || goodsId <= 0) {
             return false;
         }

@@ -21,6 +21,7 @@ public enum RespBeanEnum {
     SUCCESS(200, "SUCCESS"),
     ERROR(500, "服务器异常"),
     REQUEST_ILLEGAL(500102, "请求非法"),
+    ACCESS_LIMIT_REACHEED(500103, "访问太频繁，请稍后再操作"),
 
     //登录模块 5002xx
     LOGIN_ERROR(500210, "用户名或密码不正确"),

@@ -42,7 +42,7 @@
         </tr>
         <tr>
             <td>收货人</td>
-            <td colspan="2" id="nickname">xxx   130xxxxxxxx</td>
+            <td colspan="2" id="nickname">xxx 130xxxxxxxx</td>
         </tr>
         <tr>
             <td>收货地址</td>
@@ -62,20 +62,20 @@
     })
 
     //ajax异步请求页面数据
-    function getOderDetail(){
+    function getOderDetail() {
         var orderId = getQueryVariable("orderId");
 
         $.ajax({
             url: "/order/detail",
             type: "GET",
             data: {
-                orderId:orderId
+                orderId: orderId
             },
             success: function (data) {
                 if (data.code == 200) {
                     render(data.obj);
                 } else {
-                    layer.msg(data.message);
+                    layer.msg(data.code + ":" + data.message);
                 }
             },
             error: function () {

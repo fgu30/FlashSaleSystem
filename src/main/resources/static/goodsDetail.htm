@@ -93,7 +93,7 @@
                 if (data.code == 200) {
                     render(data.obj);
                 } else {
-                    layer.msg("客户端请求出错");
+                    layer.msg(data.code + ":" + data.message);
                 }
             },
             error: function () {
@@ -231,7 +231,7 @@
                             });
                     }
                 } else {
-                    layer.msg(data.message);
+                    layer.msg(data.code + ":" + data.message);
                 }
             },
             error: function () {
@@ -256,7 +256,7 @@
                     var path = data.obj;
                     doSeckill(path);
                 } else {
-                    layer.msg(data.message);
+                    layer.msg(data.code + ":" + data.message);
                 }
             },
             error: function () {

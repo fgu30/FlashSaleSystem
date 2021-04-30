@@ -1,6 +1,7 @@
 package com.sqn.seckill.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.sqn.seckill.access.AccessLimit;
 import com.sqn.seckill.entity.Order;
 import com.sqn.seckill.entity.SeckillOrder;
 import com.sqn.seckill.entity.User;
@@ -22,6 +23,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.OutputStream;
@@ -29,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Title: SecKillController
@@ -236,7 +239,7 @@ public class SecKillController implements InitializingBean {
     }
 
     /**
-     * 秒杀 静态化   解决超卖问题    redis预减库存 rabbitmq消息入队    隐藏秒杀接口地址    数学公式验证码
+     * 秒杀 静态化   解决超卖问题    redis预减库存 rabbitmq消息入队    隐藏秒杀接口地址
      * 10000*1*10
      * windows优化前QPS:467.5/sec
      * linux优化前QPS:94.4/sec
@@ -336,22 +339,64 @@ public class SecKillController implements InitializingBean {
     }
 
     /**
-     * 隐藏秒杀接口地址，获取秒杀接口地址
+     * 隐藏秒杀接口地址，获取秒杀接口地址    数学公式验证码   接口访问限制
+     * 测试访问限制将参数改成@RequestParam(value="verifyCode",defaultValue="0")
      *
      * @param user
      * @param goodsId
      * @return
      */
+    @RequestMapping(value = "/path1", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getSecKillPath1(HttpServletRequest request, User user, @RequestParam("goodsId") Long goodsId, @RequestParam("verifyCode") int verifyCode) {
+        //判断用户是否登录
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+
+        //redis查询访问次数　5/５seconds
+        String uri = request.getRequestURI();
+        String key = uri + "_" + user.getId();
+        Integer count = (Integer) redisTemplate.opsForValue().get(key);
+        if (count == null) {
+            redisTemplate.opsForValue().set(key, 1, 5, TimeUnit.SECONDS);
+        } else if (count < 5) {
+            redisTemplate.opsForValue().increment(key);
+        } else {
+            return RespBean.error(RespBeanEnum.ACCESS_LIMIT_REACHEED);
+        }
+
+        //检查验证码
+        boolean check = seckillService.checkVerifyCode(user, goodsId, verifyCode);
+        if (!check) {
+            return RespBean.error(RespBeanEnum.VERIFYCODE_ERROR);
+        }
+
+        //生成秒杀接口path，存入redis
+        String path = seckillService.createSecKillPath(user, goodsId);
+        return RespBean.success(path);
+    }
+
+    /**
+     * 隐藏秒杀接口地址，获取秒杀接口地址    数学公式验证码   接口访问限制
+     * 测试访问限制将参数    @RequestParam("verifyCode")
+     * 改成   @RequestParam(value="verifyCode",defaultValue="0")
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @AccessLimit(seconds = 5, maxCount = 5, needLogin = true)
     @RequestMapping(value = "/path", method = RequestMethod.GET)
     @ResponseBody
-    public RespBean getSecKillPath(User user, @RequestParam("goodsId") Long goodsId, @RequestParam("verifyCode") int verifyCode) {
+    public RespBean getSecKillPath(HttpServletRequest request, User user, @RequestParam("goodsId") Long goodsId, @RequestParam(value = "verifyCode", defaultValue = "0") int verifyCode) {
         //判断用户是否登录
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
 
         //检查验证码
-        boolean check = seckillService.CheckVerifyCode(user, goodsId, verifyCode);
+        boolean check = seckillService.checkVerifyCode(user, goodsId, verifyCode);
         if (!check) {
             return RespBean.error(RespBeanEnum.VERIFYCODE_ERROR);
         }

@@ -1,5 +1,6 @@
 package com.sqn.seckill.configuration;
 
+import com.sqn.seckill.access.UserContext;
 import com.sqn.seckill.entity.User;
 import com.sqn.seckill.service.UserService;
 import com.sqn.seckill.utils.CookieUtil;
@@ -35,8 +36,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
         return clazz == User.class;
     }
 
-    @Override
-    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+    public Object resolveArgument1(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
         String ticket = CookieUtil.getCookieValue(request, "userTicket");
@@ -44,5 +44,10 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
             return null;
         }
         return userService.getUserByCookie(ticket, request, response);
+    }
+
+    @Override
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+        return UserContext.getUser();
     }
 }
