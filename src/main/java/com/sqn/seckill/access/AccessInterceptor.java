@@ -1,6 +1,7 @@
 package com.sqn.seckill.access;
 
 import com.alibaba.fastjson.JSON;
+import com.sqn.seckill.controller.LoginController;
 import com.sqn.seckill.entity.User;
 import com.sqn.seckill.service.UserService;
 import com.sqn.seckill.utils.CookieUtil;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,6 +41,13 @@ public class AccessInterceptor extends HandlerInterceptorAdapter {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
         if (handler instanceof HandlerMethod) {
+            HandlerMethod handlerMethod = (HandlerMethod) handler;
+            Method method = handlerMethod.getMethod();
+            String methodName = method.getName();
+            //System.out.println(methodName);
+            if ("toLogin".equals(methodName) || "doLogin".equals(methodName)){
+                return true;
+            }
             //获取cookie中userTicket
             String ticket = CookieUtil.getCookieValue(request, "userTicket");
             if (StringUtils.isEmpty(ticket)) {
@@ -50,7 +59,6 @@ public class AccessInterceptor extends HandlerInterceptorAdapter {
             UserContext.setUser(user);
 
             //获取注解信息
-            HandlerMethod handlerMethod = (HandlerMethod) handler;
             AccessLimit accessLimit = handlerMethod.getMethodAnnotation(AccessLimit.class);
             if (accessLimit == null) {
                 return true;

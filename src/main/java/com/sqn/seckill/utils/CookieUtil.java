@@ -166,7 +166,7 @@ public final class CookieUtil {
             } else if (isEncode) {
                 cookieValue = URLEncoder.encode(cookieValue, "utf-8");
             }
-            Cookie cookie = new Cookie(cookieValue, cookieName);
+            Cookie cookie = new Cookie(cookieName, cookieValue);
             if (cookieMaxage > 0) {
                 cookie.setMaxAge(cookieMaxage);
             }
@@ -254,7 +254,7 @@ public final class CookieUtil {
             int len = domains.length;
             if (len > ADDRESS_LENGTH) {
                 // www.XXx.com.cn
-                domainName = domains[len - 3] + "." + domains[len - 2] + "." + domains[len - 1];
+                domainName = domains[len-4] + "." +domains[len - 3] + "." + domains[len - 2] + "." + domains[len - 1];
             } else if (len <= ADDRESS_LENGTH && len > 1) {
                 // xxx.com or xxx.cn
                 domainName = domains[len - 2] + "." + domains[len - 1];
