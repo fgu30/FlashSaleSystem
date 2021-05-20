@@ -242,7 +242,7 @@ public class AutoGeneratorCode {
     }
 
     /**
-     *  bug:html文件有些参数无法获取
+     *  TODO bug:html文件有些参数无法获取
      */
     private static InjectionConfig initInjectionConfig(){
         //AbstractTemplateEngine

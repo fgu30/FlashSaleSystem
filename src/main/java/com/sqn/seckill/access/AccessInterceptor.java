@@ -1,7 +1,6 @@
 package com.sqn.seckill.access;
 
 import com.alibaba.fastjson.JSON;
-import com.sqn.seckill.controller.LoginController;
 import com.sqn.seckill.entity.User;
 import com.sqn.seckill.service.UserService;
 import com.sqn.seckill.utils.CookieUtil;
@@ -45,7 +44,7 @@ public class AccessInterceptor extends HandlerInterceptorAdapter {
             Method method = handlerMethod.getMethod();
             String methodName = method.getName();
             //System.out.println(methodName);
-            if ("toLogin".equals(methodName) || "doLogin".equals(methodName)){
+            if ("toLogin".equals(methodName) || "doLogin".equals(methodName)) {
                 return true;
             }
             //获取cookie中userTicket
